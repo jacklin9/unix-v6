@@ -12,7 +12,7 @@ reset	= 5
 .globl	_trap
 trap:
 	mov	PS,-4(sp)
-	tst	nofault
+	tst	nofault		/// if nofault is set, call it
 	bne	1f
 	mov	SSR0,ssr
 	mov	SSR2,ssr+4
@@ -20,7 +20,7 @@ trap:
 	jsr	r0,call1; _trap
 	/ no return
 1:
-	mov	$1,SSR0
+	mov	$1,SSR0		/// Restart mem manager
 	mov	nofault,(sp)
 	rtt
 
@@ -416,9 +416,9 @@ jflg:	.=.+1
 .globl	_fuiword, _suiword
 _fuibyte:
 _fubyte:
-	mov	2(sp),r1
+	mov	2(sp),r1	/// Store target addr to r1
 	bic	$1,r1
-	jsr	pc,gword
+	jsr	pc,gword	/// gword is at thisfile:454
 	cmp	r1,2(sp)
 	beq	1f
 	swab	r0
@@ -452,12 +452,12 @@ fuword:
 	rts	pc
 
 gword:
-	mov	PS,-(sp)
-	bis	$340,PS
-	mov	nofault,-(sp)
-	mov	$err,nofault
-	mfpi	(r1)
-	mov	(sp)+,r0
+	mov	PS,-(sp)		/// Store processor status
+	bis	$340,PS			/// Modify processor status
+	mov	nofault,-(sp)	/// nofault is at thisfile:837. Store nofault to stack
+	mov	$err,nofault	/// err is at thisfile:483
+	mfpi	(r1)		/// If address is not accessible, a bus error trap will be genearted. See mkconf.c:293
+	mov	(sp)+,r0		/// Move result to r0
 	br	1f
 
 _suiword:
@@ -476,8 +476,8 @@ pword:
 	mov	r0,-(sp)
 	mtpi	(r1)
 1:
-	mov	(sp)+,nofault
-	mov	(sp)+,PS
+	mov	(sp)+,nofault	/// Restore nofault
+	mov	(sp)+,PS		/// Restore process status
 	rts	pc
 
 err:
@@ -616,18 +616,18 @@ _copyseg:
 
 .globl	_clearseg
 _clearseg:
-	mov	PS,-(sp)
-	mov	UISA0,-(sp)
+	mov	PS,-(sp)	/// Backup process status
+	mov	UISA0,-(sp)	/// Backup 1st user mem map addr reg
 	mov	$30340,PS
 	mov	6(sp),UISA0
-	mov	UISD0,-(sp)
+	mov	UISD0,-(sp)	/// Back 1st user mem map status reg
 	mov	$6,UISD0
 	clr	r0
 	mov	$32.,r1
 1:
 	clr	-(sp)
 	mtpi	(r0)+
-	sob	r1,1b
+	sob	r1,1b		/// Clear the segment
 	mov	(sp)+,UISD0
 	mov	(sp)+,UISA0
 	mov	(sp)+,PS
@@ -707,17 +707,17 @@ dump:
 .globl	start, _end, _edata, _main
 start:
 	bit	$1,SSR0
-	bne	start			/ loop if restart
+	bne	start			/ loop if restart	/// Check if mem management is ready
 	reset
 
 / initialize systems segments
 
-	mov	$KISA0,r0
-	mov	$KISD0,r1
+	mov	$KISA0,r0	/// Kernel mode mem map addr register starting addr
+	mov	$KISD0,r1	/// Kernel mode mem map flag register starting addr
 	mov	$200,r4
 	clr	r2
 	mov	$6,r3
-1:
+1:					/// Map 24k
 	mov	r2,(r0)+
 	mov	$77406,(r1)+		/ 4k rw
 	add	r4,r2
@@ -727,19 +727,19 @@ start:
 
 	mov	$_end+63.,r2
 	ash	$-6,r2
-	bic	$!1777,r2
+	bic	$!1777,r2		/// Make u struct at a fixed addr
 	mov	r2,(r0)+		/ ksr6 = sysu
 	mov	$usize-1\<8|6,(r1)+
 
 / initialize io segment
 / set up counts on supervisor segments
 
-	mov	$IO,(r0)+
+	mov	$IO,(r0)+		/// Addr is at the last page
 	mov	$77406,(r1)+		/ rw 4k
 
 / get a sp and start segmentation
 
-	mov	$_u+[usize*64.],sp
+	mov	$_u+[usize*64.],sp	/// Set kernel stack at the top of u struct
 	inc	SSR0
 
 / clear bss
@@ -763,9 +763,9 @@ start:
 
 	mov	$30000,PS
 	jsr	pc,_main
-	mov	$170000,-(sp)
-	clr	-(sp)
-	rtt
+	mov	$170000,-(sp)		/// Previous mode is user mode
+	clr	-(sp)	/// Return addr is 0
+	rtt		/// Return to user mode addr 0
 
 .globl	_ldiv
 _ldiv:

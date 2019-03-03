@@ -56,15 +56,16 @@ main()
 	 */
 
 	updlock = 0;
+	/// Following checks the upper bound of mem
 	i = *ka6 + USIZE;
 	UISD->r[0] = 077406;
 	for(;;) {
-		UISA->r[0] = i;
-		if(fuibyte(0) < 0)
+		UISA->r[0] = i;		/// Map user address 0 to physical addr i
+		if(fuibyte(0) < 0)	/// See m40.s:417. Try to read user addr 0. If failed, the mem is not available
 			break;
-		clearseg(i);
+		clearseg(i);		/// clearseg see m40.s:618
 		maxmem++;
-		mfree(coremap, 1, i);
+		mfree(coremap, 1, i);	/// mfree see ken/malloc.c:55
 		i++;
 	}
 	if(cputype == 70)
@@ -72,7 +73,7 @@ main()
 		UBMAP->r[i] = i<<12;
 		UBMAP->r[i+1] = 0;
 	}
-	printf("mem = %l\n", maxmem*5/16);
+	printf("mem = %l\n", maxmem*5/16);	/// See prf.c:40
 	maxmem = min(maxmem, MAXMEM);
 	mfree(swapmap, nswap, swplo);
 
@@ -80,12 +81,12 @@ main()
 	 * determine clock
 	 */
 
-	UISA->r[7] = ka6[1]; /* io segment */
+	UISA->r[7] = ka6[1]; /* io segment */	/// Also map IO addr to user mem map
 	UISD->r[7] = 077406;
 	lks = CLOCK1;
-	if(fuiword(lks) == -1) {
+	if(fuiword(lks) == -1) {	/// fuiword see m40.s:447. Detect the first clock
 		lks = CLOCK2;
-		if(fuiword(lks) == -1)
+		if(fuiword(lks) == -1)	/// Detect the second clock
 			panic("no clock");
 	}
 
@@ -93,7 +94,7 @@ main()
 	 * set up system process
 	 */
 
-	proc[0].p_addr = *ka6;
+	proc[0].p_addr = *ka6;	/// This is the system proc running scheduler
 	proc[0].p_size = USIZE;
 	proc[0].p_stat = SRUN;
 	proc[0].p_flag =| SLOAD|SSYS;
@@ -104,9 +105,9 @@ main()
 	 */
 
 	*lks = 0115;
-	cinit();
-	binit();
-	iinit();
+	cinit();	/// Initialize char buf and char dev
+	binit();	/// Initialize block cache and block dev
+	iinit();	/// Read super block
 	rootdir = iget(rootdev, ROOTINO);
 	rootdir->i_flag =& ~ILOCK;
 	u.u_cdir = iget(rootdev, ROOTINO);

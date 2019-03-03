@@ -41,7 +41,7 @@ struct tab
 	char	*name;
 	int	count;
 	int	address;
-	int	key;
+	int	key;	/// Device type, whether it needs interrupt
 	char	*codea;
 	char	*codeb;
 	char	*codec;
@@ -129,7 +129,7 @@ struct tab
  * 210 RC
  */
 
-	"tc",
+	"tc",		/// This is the 3rd dev
 	0,	214,	BLOCK+INTR,
 	"\ttcio; br6\n",
 	".globl\t_tcintr\n",
@@ -137,7 +137,7 @@ struct tab
 	"\t&nulldev,\t&tcclose,\t&tcstrategy, \t&tctab,",
 	"",
 
-	"rk",
+	"rk",		/// This is the 1st dev: root dev
 	0,	220,	BLOCK+CHAR+INTR,
 	"\trkio; br5\n",
 	".globl\t_rkintr\n",
@@ -145,7 +145,7 @@ struct tab
 	"\t&nulldev,\t&nulldev,\t&rkstrategy, \t&rktab,",
 	"\t&nulldev,  &nulldev,  &rkread,   &rkwrite,  &nodev,",
 
-	"tm",
+	"tm",		/// This is the 2nd dev
 	0,	224,	BLOCK+CHAR+INTR,
 	"\ttmio; br5\n",
 	".globl\t_tmintr\n",
@@ -276,7 +276,7 @@ struct tab
 	0
 };
 
-char	*stra[]
+char	*stra[]		/// This is the start of the kernel code
 {
 	"/ low core",
 	"",
@@ -290,7 +290,7 @@ char	*stra[]
 	"\t4",
 	"",
 	"/ trap vectors",
-	"\ttrap; br7+0.\t\t/ bus error",
+	"\ttrap; br7+0.\t\t/ bus error",	/// trap see m40.s:13
 	"\ttrap; br7+1.\t\t/ illegal instruction",
 	"\ttrap; br7+2.\t\t/ bpt-trace trap",
 	"\ttrap; br7+3.\t\t/ iot trap",
@@ -300,7 +300,7 @@ char	*stra[]
 	"",
 	". = 40^.",
 	".globl\tstart, dump",
-	"1:\tjmp\tstart",
+	"1:\tjmp\tstart",	/// See m40.s:708
 	"\tjmp\tdump",
 	"",
 	0,
@@ -385,7 +385,7 @@ main()
 	nkl = 0;
 	flagf = flagb = 1;
 	fout = creat("l.s", 0666);
-	puke(stra);
+	puke(stra);	/// Print according to string list
 	for(p=table; p->name; p++)
 	if(p->count != 0 && p->key & INTR) {
 		if(p->address>240 && flagb) {
@@ -500,7 +500,7 @@ input()
 	for(q=table; q->name; q++)
 	if(equal(q->name, p)) {
 		if(root < 0 && (q->key&BLOCK)) {
-			root = 0;
+			root = 0;	/// Root is set
 			q->key =| ROOT;
 		}
 		if(q->count < 0) {

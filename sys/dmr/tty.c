@@ -155,7 +155,7 @@ cinit()
 	register struct cdevsw *cdp;
 
 	ccp = cfree;
-	for (cp=(ccp+07)&~07; cp <= &cfree[NCLIST-1]; cp++) {
+	for (cp=(ccp+07)&~07; cp <= &cfree[NCLIST-1]; cp++) {	/// Initialize cfreelist
 		cp->c_next = cfreelist;
 		cfreelist = cp;
 	}
