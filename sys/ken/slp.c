@@ -272,7 +272,7 @@ swtch()
 	/*
 	 * Remember stack of caller
 	 */
-	savu(u.u_rsav);
+	savu(u.u_rsav);	/// savu see m40.s:538	/// For the first call of swtch, the pair of savu/retu has no effect
 	/*
 	 * Switch to scheduler's stack
 	 */
