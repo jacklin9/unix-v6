@@ -25,7 +25,7 @@ iinit()
 	register *cp, *bp;
 
 	(*bdevsw[rootdev.d_major].d_open)(rootdev, 1);
-	bp = bread(rootdev, 1);
+	bp = bread(rootdev, 1);	/// bread see bio.c:55
 	cp = getblk(NODEV);
 	if(u.u_error)
 		panic("iinit");

@@ -108,7 +108,7 @@ main()
 	cinit();	/// Initialize char buf and char dev
 	binit();	/// Initialize block cache and block dev
 	iinit();	/// Read super block
-	rootdir = iget(rootdev, ROOTINO);
+	rootdir = iget(rootdev, ROOTINO);	/// iget see iget.c:27
 	rootdir->i_flag =& ~ILOCK;
 	u.u_cdir = iget(rootdev, ROOTINO);
 	u.u_cdir->i_flag =& ~ILOCK;

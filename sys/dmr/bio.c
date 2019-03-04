@@ -170,8 +170,8 @@ struct buf *bp;
 	register int sps;
 
 	rbp = bp;
-	if (rbp->b_flags&B_WANTED)
-		wakeup(rbp);
+	if (rbp->b_flags&B_WANTED)	/// Some process is waiting for the block cache. Add this flag to avoid unnecessary wakeup
+		wakeup(rbp);	/// wakeup see slp.c:71
 	if (bfreelist.b_flags&B_WANTED) {
 		bfreelist.b_flags =& ~B_WANTED;
 		wakeup(&bfreelist);
@@ -180,7 +180,7 @@ struct buf *bp;
 		rbp->b_dev.d_minor = -1;  /* no assoc. on error */
 	backp = &bfreelist.av_back;
 	sps = PS->integ;
-	spl6();
+	spl6();	/// spl6 see m40.s:580. Set processor priority to 6 to make sure interrupt lower than 7 not interrupt the processor
 	rbp->b_flags =& ~(B_WANTED|B_BUSY|B_ASYNC);
 	(*backp)->av_forw = rbp;
 	rbp->av_back = *backp;
@@ -228,7 +228,7 @@ getblk(dev, blkno)
 	if (dev < 0)
 		dp = &bfreelist;
 	else {
-		dp = bdevsw[dev.d_major].d_tab;
+		dp = bdevsw[dev.d_major].d_tab;	/// If there is no corresponding dev interface in block dev tab...
 		if(dp == NULL)
 			panic("devtab");
 		for (bp=dp->b_forw; bp != dp; bp = bp->b_forw) {
@@ -237,7 +237,7 @@ getblk(dev, blkno)
 			spl6();
 			if (bp->b_flags&B_BUSY) {
 				bp->b_flags =| B_WANTED;
-				sleep(bp, PRIBIO);
+				sleep(bp, PRIBIO);	/// sleep see slp.c:25
 				spl0();
 				goto loop;
 			}

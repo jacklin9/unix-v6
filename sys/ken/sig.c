@@ -91,7 +91,7 @@ issig()
 	register struct proc *p;
 
 	p = u.u_procp;
-	if(n = p->p_sig) {
+	if(n = p->p_sig) {	/// Signal number sent to this proc
 		if (p->p_flag&STRC) {
 			stop();
 			if ((n = p->p_sig) == 0)

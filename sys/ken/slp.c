@@ -162,14 +162,14 @@ loop:
 	spl6();
 	n = -1;
 	for(rp = &proc[0]; rp < &proc[NPROC]; rp++)
-	if(rp->p_stat==SRUN && (rp->p_flag&SLOAD)==0 &&
+	if(rp->p_stat==SRUN && (rp->p_flag&SLOAD)==0 &&		/// When the initialization goes here, no proc needs swapped in, so go to sleep
 	    rp->p_time > n) {
 		p1 = rp;
 		n = rp->p_time;
 	}
 	if(n == -1) {
 		runout++;
-		sleep(&runout, PSWP);
+		sleep(&runout, PSWP);	/// runout is a flag that scheduler is waiting for a swapped out proc to be swapped in
 		goto loop;
 	}
 
@@ -276,7 +276,7 @@ swtch()
 	/*
 	 * Switch to scheduler's stack
 	 */
-	retu(proc[0].p_addr);
+	retu(proc[0].p_addr);	/// retu see m40.s:553
 
 loop:
 	runrun = 0;
@@ -411,7 +411,7 @@ retry:
 	 * of the new process so that when it is actually
 	 * created (by copying) it will look right.
 	 */
-	savu(u.u_rsav);
+	savu(u.u_rsav);	/// savu see m40.s:538. Save sp and r5(bp) to u struct
 	rpp = p;
 	u.u_procp = rpp;
 	rip = up;
