@@ -119,15 +119,15 @@ main()
 	 * with system process
 	 */
 
-	if(newproc()) {
-		expand(USIZE+1);
+	if(newproc()) {	/// First user proc
+		expand(USIZE+1);	/// expand see slp.c:462
 		estabur(0, 1, 0, 0);
 		copyout(icode, 0, sizeof icode);
 		/*
 		 * Return goes to loc. 0 of user init
 		 * code just copied out.
 		 */
-		return;
+		return;	/// Return to m40.s:766
 	}
 	sched();
 }

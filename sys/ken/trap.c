@@ -18,7 +18,7 @@
 struct sysent	{
 	int	count;		/* argument count */
 	int	(*call)();	/* name of handler */
-} sysent[64];
+} sysent[64];	/// See sysent.c:11
 
 /*
  * Offsets of the user's registers relative to

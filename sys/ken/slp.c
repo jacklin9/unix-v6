@@ -472,7 +472,7 @@ expand(newsize)
 		mfree(coremap, n-newsize, a1+newsize);
 		return;
 	}
-	savu(u.u_rsav);
+	savu(u.u_rsav);	/// Save this process's kernel context so that any retu to this process will return to this context
 	a2 = malloc(coremap, newsize);
 	if(a2 == NULL) {
 		savu(u.u_ssav);
