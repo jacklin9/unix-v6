@@ -363,15 +363,15 @@ newproc()
 	 * checked for the existence of a slot.
 	 */
 retry:
-	mpid++;
+	mpid++;	/// Find a proc id
 	if(mpid < 0) {
 		mpid = 0;
 		goto retry;
 	}
 	for(rpp = &proc[0]; rpp < &proc[NPROC]; rpp++) {
-		if(rpp->p_stat == NULL && p==NULL)
+		if(rpp->p_stat == NULL && p==NULL)	/// Find an available proc slot, record it with p
 			p = rpp;
-		if (rpp->p_pid==mpid)
+		if (rpp->p_pid==mpid)	/// Check if the new proc id is already used
 			goto retry;
 	}
 	if ((rpp = p)==NULL)

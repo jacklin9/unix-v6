@@ -12,7 +12,7 @@ reset	= 5
 .globl	_trap
 trap:
 	mov	PS,-4(sp)
-	tst	nofault		/// if nofault is set, call it
+	tst	nofault		/// if nofault is set, system will assume it is not a fault, call it and return normally
 	bne	1f
 	mov	SSR0,ssr
 	mov	SSR2,ssr+4
