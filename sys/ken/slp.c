@@ -261,6 +261,9 @@ swaper:
  * arrangements for it to restart must have
  * been made elsewhere, usually by calling via sleep.
  */
+/// swtch uses savu and retu to switch kernel context. when retu returns, it will return to where retu was called.
+/// But when the function that calls retu returns, it will return to the place in the newly selected proc where the 
+/// functions that called savu was called (because the underlying stack has been changed by retu)
 swtch()
 {
 	static struct proc *p;
