@@ -289,7 +289,10 @@ char	*stra[]		/// This is the start of the kernel code
 	"\tbr\t1f",
 	"\t4",
 	"",
-	"/ trap vectors",
+	"/ trap vectors",	/// When an interrupt happens, the process will automatically stores return address and processor status
+						/// to stack, and load instruction pointer and proc status register with the first and second word in the
+						/// trap vector. Eg, when a bus error occurs, the addr of trap routine will be loaded to instruction reg,
+						/// and br7 + 0 will be loaded to proc status reg
 	"\ttrap; br7+0.\t\t/ bus error",	/// trap see m40.s:13
 	"\ttrap; br7+1.\t\t/ illegal instruction",
 	"\ttrap; br7+2.\t\t/ bpt-trace trap",
