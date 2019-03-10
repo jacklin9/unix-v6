@@ -496,7 +496,7 @@ swap(blkno, coreaddr, count, rdflg)
 	spl6();
 	while (*fp&B_BUSY) {
 		*fp =| B_WANTED;
-		sleep(fp, PSWP);
+		sleep(fp, PSWP);	/// sleep see slp.c:25
 	}
 	*fp = B_BUSY | B_PHYS | rdflg;
 	swbuf.b_dev = swapdev;

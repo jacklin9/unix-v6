@@ -159,11 +159,11 @@ sloop:
 	sleep(&runin, PSWP);
 
 loop:
-	spl6();
+	spl6();	/// spl6 see m40.s:580
 	n = -1;
 	for(rp = &proc[0]; rp < &proc[NPROC]; rp++)
 	if(rp->p_stat==SRUN && (rp->p_flag&SLOAD)==0 &&		/// When the initialization goes here, no proc needs swapped in, so go to sleep
-	    rp->p_time > n) {
+		rp->p_time > n) {	/// Find a proc in run stat but not in core and waits for schedule longest
 		p1 = rp;
 		n = rp->p_time;
 	}
@@ -351,7 +351,7 @@ loop:
  * (see above) is that this is the value that newproc's
  * caller in the new process sees.
  */
-newproc()
+newproc()	/// New proc returns twice: one in the parent proc; the other in the child proc from swtch
 {
 	int a1, a2;
 	struct proc *p, *up;
@@ -415,9 +415,9 @@ retry:
 	 * created (by copying) it will look right.
 	 */
 	savu(u.u_rsav);	/// savu see m40.s:538. Save sp and r5(bp) to u struct
-	rpp = p;
+	rpp = p;	/// rpp is new proc
 	u.u_procp = rpp;
-	rip = up;
+	rip = up;	/// rip is current proc
 	n = rip->p_size;
 	a1 = rip->p_addr;
 	rpp->p_size = n;
@@ -428,10 +428,10 @@ retry:
 	 * copy.
 	 */
 	if(a2 == NULL) {
-		rip->p_stat = SIDL;
-		rpp->p_addr = a1;
+		rip->p_stat = SIDL;	/// The proc is creating a proc
+		rpp->p_addr = a1;	/// Borrow core mem from parent
 		savu(u.u_ssav);
-		xswap(rpp, 0, 0);
+		xswap(rpp, 0, 0);	/// xswap see text.c:23. Swap out the new proc
 		rpp->p_flag =| SSWAP;
 		rip->p_stat = SRUN;
 	} else {

@@ -28,12 +28,12 @@ int *p;
 	rp = p;
 	if(os == 0)
 		os = rp->p_size;
-	a = malloc(swapmap, (rp->p_size+7)/8);
+	a = malloc(swapmap, (rp->p_size+7)/8);	/// size round up to 8 bytes
 	if(a == NULL)
 		panic("out of swap space");
-	xccdec(rp->p_textp);
+	xccdec(rp->p_textp);	/// Decrease the text ref count, and if ref count is 0, free it.
 	rp->p_flag =| SLOCK;
-	if(swap(a, rp->p_addr, os, 0))
+	if(swap(a, rp->p_addr, os, 0))	/// swap see bio.c:491
 		panic("swap error");
 	if(ff)
 		mfree(coremap, os, rp->p_addr);
