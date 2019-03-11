@@ -17,7 +17,7 @@ trap:
 	mov	SSR0,ssr
 	mov	SSR2,ssr+4
 	mov	$1,SSR0
-	jsr	r0,call1; _trap
+	jsr	r0,call1; _trap	/// call1 see m40.s:28
 	/ no return
 1:
 	mov	$1,SSR0		/// Restart mem manager

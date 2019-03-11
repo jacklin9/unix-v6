@@ -40,10 +40,10 @@ struct tab
 {
 	char	*name;
 	int	count;
-	int	address;
+	int	address;	/// Trap vector addr
 	int	key;	/// Device type, whether it needs interrupt
-	char	*codea;
-	char	*codeb;
+	char	*codea;	/// Trap vector content
+	char	*codeb;	/// Implementation of function called in trap vector
 	char	*codec;
 	char	*coded;
 	char	*codee;
@@ -52,7 +52,7 @@ struct tab
 	"console",
 	-1,	60,	CHAR+INTR+KL,
 	"\tklin; br4\n\tklou; br4\n",
-	".globl\t_klrint\nklin:\tjsr\tr0,call; _klrint\n",
+	".globl\t_klrint\nklin:\tjsr\tr0,call; _klrint\n",	/// Push r0 to stack, move address of next instruction (which stores addr of _klrint) to r0, and jump to call
 	".globl\t_klxint\nklou:\tjsr\tr0,call; _klxint\n",
 	"",
 	"\t&klopen,   &klclose,  &klread,   &klwrite,  &klsgtty,",
@@ -73,7 +73,7 @@ struct tab
 	"",
 	"\t&pcopen,   &pcclose,  &pcread,   &pcwrite,  &nodev,",
 
-	"clock",
+	"clock",	/// Clock
 	-2,	100,	INTR,
 	"\tkwlp; br6\n",
 	".globl\t_clock\n",
