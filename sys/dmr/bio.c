@@ -61,7 +61,7 @@ bread(dev, blkno)
 		return(rbp);
 	rbp->b_flags =| B_READ;
 	rbp->b_wcount = -256;
-	(*bdevsw[dev.d_major].d_strategy)(rbp);
+	(*bdevsw[dev.d_major].d_strategy)(rbp);	/// Trigger the block read
 	iowait(rbp);
 	return(rbp);
 }
@@ -70,7 +70,7 @@ bread(dev, blkno)
  * Read in the block, like bread, but also start I/O on the
  * read-ahead block (which is not allocated to the caller)
  */
-breada(adev, blkno, rablkno)
+breada(adev, blkno, rablkno)	/// read ahead one block whose block number is rablkno
 {
 	register struct buf *rbp, *rabp;
 	register int dev;
@@ -116,7 +116,7 @@ struct buf *bp;
 	rbp->b_flags =& ~(B_READ | B_DONE | B_ERROR | B_DELWRI);
 	rbp->b_wcount = -256;
 	(*bdevsw[rbp->b_dev.d_major].d_strategy)(rbp);
-	if ((flag&B_ASYNC) == 0) {
+	if ((flag&B_ASYNC) == 0) {	/// Synchronized write needed
 		iowait(rbp);
 		brelse(rbp);
 	} else if ((flag&B_DELWRI)==0)
@@ -131,7 +131,7 @@ struct buf *bp;
  * This can't be done for magtape, since writes must be done
  * in the same order as requested.
  */
-bdwrite(bp)
+bdwrite(bp)	/// Delayed write
 struct buf *bp;
 {
 	register struct buf *rbp;
@@ -140,7 +140,7 @@ struct buf *bp;
 	rbp = bp;
 	dp = bdevsw[rbp->b_dev.d_major].d_tab;
 	if (dp == &tmtab || dp == &httab)
-		bawrite(rbp);
+		bawrite(rbp);	/// Asynchronized write
 	else {
 		rbp->b_flags =| B_DELWRI | B_DONE;
 		brelse(rbp);
@@ -282,9 +282,9 @@ struct buf *bp;
 	register struct buf *rbp;
 
 	rbp = bp;
-	spl6();
+	spl6();	/// spl6 see m40.s:580. Change the CPU priority to 6 so only time interrupt can stop it
 	while ((rbp->b_flags&B_DONE)==0)
-		sleep(rbp, PRIBIO);
+		sleep(rbp, PRIBIO);	/// Sleep to wait for IO finish. sleep see slp.c:25
 	spl0();
 	geterror(rbp);
 }

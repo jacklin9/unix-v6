@@ -39,15 +39,21 @@ char	regloc[9]
  * get copied back on return.
  * dev is the kind of trap that occurred.
  */
-trap(dev, sp, r1, nps, r0, pc, ps)
+trap(dev, sp, r1, nps, r0, pc, ps)	/// dev that indicates which triggers the trap.
+									/// sp is the user stack pointer.
+									/// r1 is the backuped r1
+									/// nps is the PS when entering trap
+									/// r0 is the old r0
+									/// pc is the addr interrupted by trap
+									/// ps the PS when interrupted by trap
 {
 	register i, a;
 	register struct sysent *callp;
 
-	savfp();
-	if ((ps&UMODE) == UMODE)
+	savfp();	/// savfp see m40.s:65
+	if ((ps&UMODE) == UMODE)	/// If previous mode is user mode
 		dev =| USER;
-	u.u_ar0 = &r0;
+	u.u_ar0 = &r0;	/// Address of stack entry that backups r0 register
 	switch(dev) {
 
 	/*
@@ -139,7 +145,7 @@ trap(dev, sp, r1, nps, r0, pc, ps)
 	 * up later.
 	 */
 	case 8: /* floating exception */
-		psignal(u.u_procp, SIGFPT);
+		psignal(u.u_procp, SIGFPT);	/// psignal see sig.c:61
 		return;
 
 	case 8+USER:
@@ -169,7 +175,7 @@ trap(dev, sp, r1, nps, r0, pc, ps)
 out:
 	if(issig())
 		psig();
-	setpri(u.u_procp);
+	setpri(u.u_procp);	/// setpri see slp.c:112
 }
 
 /*

@@ -279,7 +279,8 @@ swtch()
 	/*
 	 * Switch to scheduler's stack
 	 */
-	retu(proc[0].p_addr);	/// retu see m40.s:553
+	retu(proc[0].p_addr);	/// retu see m40.s:553. Now u is actully proc[0]'s u area.
+							/// So following code runs in proc[0]'s kernel stack
 
 loop:
 	runrun = 0;

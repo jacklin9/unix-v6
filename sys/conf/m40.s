@@ -17,7 +17,7 @@ trap:
 	mov	SSR0,ssr
 	mov	SSR2,ssr+4
 	mov	$1,SSR0
-	jsr	r0,call1; _trap	/// call1 see m40.s:28
+	jsr	r0,call1; _trap	/// call1 see m40.s:28. _trap see trap.c:42
 	/ no return
 1:
 	mov	$1,SSR0		/// Restart mem manager
@@ -34,15 +34,15 @@ call:
 	mov	PS,-(sp)
 1:
 	mov	r1,-(sp)
-	mfpi	sp
+	mfpi	sp	/// Push SP in previous mode to current stack
 	mov	4(sp),-(sp)
-	bic	$!37,(sp)
-	bit	$30000,PS
-	beq	1f
-	jsr	pc,*(r0)+
+	bic	$!37,(sp)	/// Get the last 5 bits, that is the dev id in the PS
+	bit	$30000,PS	/// Previous mode: 00 kernel, 11 user
+	beq	1f			/// If kernel mode. Trap happens in kernel mode
+	jsr	pc,*(r0)+	/// Previous mode is user mode. Go to trap.c:42 or dev intr service routine.
 2:
 	bis	$340,PS
-	tstb	_runrun
+	tstb	_runrun	/// Needs some kind of proc schedule
 	beq	2f
 	bic	$340,PS
 	jsr	pc,_swtch
@@ -52,7 +52,7 @@ call:
 	mtpi	sp
 	br	2f
 1:
-	bis	$30000,PS
+	bis	$30000,PS	/// Set previous mode to be user mode
 	jsr	pc,*(r0)+
 	cmp	(sp)+,(sp)+
 2:

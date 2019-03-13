@@ -141,15 +141,18 @@ struct tab
 	0,	220,	BLOCK+CHAR+INTR,
 	"\trkio; br5\n",
 	".globl\t_rkintr\n",
-	"rkio:\tjsr\tr0,call; _rkintr\n",
+	"rkio:\tjsr\tr0,call; _rkintr\n",	/// When interrupt happens,  PS and PC will be pushed to stack.
+										/// r0 will also be pushed to stack. Then r0 is loaded with addr of 
+										/// next instruction (which stores addr of _rkintr), and jump to call
+										/// call see m40.s:33. _rkintr see rk.c:98
 	"\t&nulldev,\t&nulldev,\t&rkstrategy, \t&rktab,",
 	"\t&nulldev,  &nulldev,  &rkread,   &rkwrite,  &nodev,",
 
-	"tm",		/// This is the 2nd dev
+	"tm",		/// This is the 2nd dev: timer
 	0,	224,	BLOCK+CHAR+INTR,
 	"\ttmio; br5\n",
 	".globl\t_tmintr\n",
-	"tmio:\tjsr\tr0,call; _tmintr\n",
+	"tmio:\tjsr\tr0,call; _tmintr\n",	/// tmintr see tm.c:161
 	"\t&tmopen,\t&tmclose,\t&tmstrategy, \t&tmtab,",
 	"\t&tmopen,   &tmclose,  &tmread,   &tmwrite,  &nodev,",
 
@@ -289,7 +292,7 @@ char	*stra[]		/// This is the start of the kernel code
 	"\tbr\t1f",
 	"\t4",
 	"",
-	"/ trap vectors",	/// When an interrupt happens, the process will automatically stores return address and processor status
+	"/ trap vectors",	/// When an interrupt happens, the process will automatically stores processor status and return address
 						/// to stack, and load instruction pointer and proc status register with the first and second word in the
 						/// trap vector. Eg, when a bus error occurs, the addr of trap routine will be loaded to instruction reg,
 						/// and br7 + 0 will be loaded to proc status reg
