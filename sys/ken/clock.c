@@ -38,7 +38,7 @@ clock(dev, sp, r1, nps, r0, pc, ps)
 	 * display register
 	 */
 
-	display();
+	display();	/// display see m40.s:66: does nothing
 
 	/*
 	 * callouts
@@ -67,12 +67,12 @@ clock(dev, sp, r1, nps, r0, pc, ps)
 	spl5();
 	if(callout[0].c_time <= 0) {
 		p1 = &callout[0];
-		while(p1->c_func != 0 && p1->c_time <= 0) {
+		while(p1->c_func != 0 && p1->c_time <= 0) {	/// For each callout that has been timed up and has action
 			(*p1->c_func)(p1->c_arg);
 			p1++;
 		}
 		p2 = &callout[0];
-		while(p2->c_func = p1->c_func) {
+		while(p2->c_func = p1->c_func) {	/// Delete the timers that have been tiggered
 			p2->c_time = p1->c_time;
 			p2->c_arg = p1->c_arg;
 			p1++;
@@ -87,23 +87,23 @@ clock(dev, sp, r1, nps, r0, pc, ps)
 
 out:
 	if((ps&UMODE) == UMODE) {
-		u.u_utime++;
+		u.u_utime++;	/// Inc user level time
 		if(u.u_prof[3])
-			incupc(pc, u.u_prof);
+			incupc(pc, u.u_prof);	/// incups see m40.s:70
 	} else
-		u.u_stime++;
+		u.u_stime++;	/// Inc kernel/sys level time
 	pp = u.u_procp;
 	if(++pp->p_cpu == 0)
 		pp->p_cpu--;
-	if(++lbolt >= HZ) {
+	if(++lbolt >= HZ) {		/// tick number (between 0 and HZ)
 		if((ps&0340) != 0)
 			return;
 		lbolt =- HZ;
-		if(++time[1] == 0)
+		if(++time[1] == 0)	/// sec
 			++time[0];
 		spl1();
-		if(time[1]==tout[1] && time[0]==tout[0])
-			wakeup(tout);
+		if(time[1]==tout[1] && time[0]==tout[0])	/// Wake up proc who sleep because of sys call sleep
+			wakeup(tout);	/// wakeup see slp.c:71
 		if((time[1]&03) == 0) {
 			runrun++;
 			wakeup(&lbolt);

@@ -39,14 +39,14 @@ struct	mount
 	int	*m_inodp;	/* pointer to mounted on inode */
 } mount[NMOUNT];
 int	mpid;			/* generic for unique process id's */
-char	runin;			/* scheduling flag */
-char	runout;			/* scheduling flag */
-char	runrun;			/* scheduling flag */
+char	runin;			/* scheduling flag */	/// Wait to check if there is swapped out proc deserve swapping out a proc to free up core
+char	runout;			/* scheduling flag */	/// Wait there is swapped out proc to be swapped in
+char	runrun;			/* scheduling flag */	/// Wait for proc reschedule
 char	curpri;			/* more scheduling */
 int	maxmem;			/* actual max memory per process */
 int	*lks;			/* pointer to clock device */
 int	rootdev;		/* dev of root see conf.c */
-int	swapdev;		/* dev of swap see conf.c */
+int	swapdev;		/* dev of swap see conf.c */ 
 int	swplo;			/* block number of swap space */
 int	nswap;			/* size of swap space */	/// Configured in mkconf.c
 int	updlock;		/* lock for sync */

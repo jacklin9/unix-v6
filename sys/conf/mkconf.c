@@ -77,7 +77,7 @@ struct tab
 	-2,	100,	INTR,
 	"\tkwlp; br6\n",
 	".globl\t_clock\n",
-	"kwlp:\tjsr\tr0,call; _clock\n",
+	"kwlp:\tjsr\tr0,call; _clock\n",	/// _clock see clock.c:26
 	"",
 	"",
 
@@ -148,11 +148,11 @@ struct tab
 	"\t&nulldev,\t&nulldev,\t&rkstrategy, \t&rktab,",
 	"\t&nulldev,  &nulldev,  &rkread,   &rkwrite,  &nodev,",
 
-	"tm",		/// This is the 2nd dev: timer
+	"tm",		/// This is the 2nd dev: tape
 	0,	224,	BLOCK+CHAR+INTR,
 	"\ttmio; br5\n",
 	".globl\t_tmintr\n",
-	"tmio:\tjsr\tr0,call; _tmintr\n",	/// tmintr see tm.c:161
+	"tmio:\tjsr\tr0,call; _tmintr\n",	/// call see m40.s:33. _tmintr see tm.c:161
 	"\t&tmopen,\t&tmclose,\t&tmstrategy, \t&tmtab,",
 	"\t&tmopen,   &tmclose,  &tmread,   &tmwrite,  &nodev,",
 

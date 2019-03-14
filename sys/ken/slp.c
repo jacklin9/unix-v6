@@ -95,7 +95,7 @@ setrun(p)
 	rp = p;
 	rp->p_wchan = 0;
 	rp->p_stat = SRUN;
-	if(rp->p_pri < curpri)
+	if(rp->p_pri < curpri)	/// Need reschedule
 		runrun++;
 	if(runout != 0 && (rp->p_flag&SLOAD) == 0) {
 		runout = 0;
@@ -204,7 +204,7 @@ loop:
 	 * oldest process in core
 	 */
 
-	if(n < 3)
+	if(n < 3)	/// The proc that needs be swapped in doesn't wait too long to swap out other proc to free up space for it
 		goto sloop;
 	n = -1;
 	for(rp = &proc[0]; rp < &proc[NPROC]; rp++)
