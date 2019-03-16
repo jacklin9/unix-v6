@@ -32,25 +32,27 @@ rdwr(mode)
 	register *fp, m;
 
 	m = mode;
-	fp = getf(u.u_ar0[R0]);
+	fp = getf(u.u_ar0[R0]);	/// r0 is the syscall argument. getf see fio.c:20
 	if(fp == NULL)
 		return;
 	if((fp->f_flag&m) == 0) {
 		u.u_error = EBADF;
 		return;
 	}
-	u.u_base = u.u_arg[0];
+	u.u_base = u.u_arg[0];	/// u_arg is a list of syscall argument. It is initialized in trap.c:188
 	u.u_count = u.u_arg[1];
 	u.u_segflg = 0;
 	if(fp->f_flag&FPIPE) {
 		if(m==FREAD)
-			readp(fp); else
-			writep(fp);
+			readp(fp); 	/// readp see pipe.c:63
+		else
+			writep(fp);	/// writep see pipe.c:121
 	} else {
 		u.u_offset[1] = fp->f_offset[1];
 		u.u_offset[0] = fp->f_offset[0];
 		if(m==FREAD)
-			readi(fp->f_inode); else
+			readi(fp->f_inode);
+		else
 			writei(fp->f_inode);
 		dpadd(fp->f_offset, u.u_arg[1]-u.u_count);
 	}

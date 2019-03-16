@@ -106,7 +106,7 @@ trap(dev, sp, r1, nps, r0, pc, ps)	/// dev that indicates which triggers the tra
 	case 6+USER: /* sys call */
 		u.u_error = 0;
 		ps =& ~EBIT;
-		callp = &sysent[fuiword(pc-2)&077];
+		callp = &sysent[fuiword(pc-2)&077]; /// fuiword(pc-2) * 077 is the trap number
 		if (callp == sysent) { /* indirect */
 			a = fuiword(pc);
 			pc =+ 2;
@@ -123,7 +123,7 @@ trap(dev, sp, r1, nps, r0, pc, ps)	/// dev that indicates which triggers the tra
 			}
 		}
 		u.u_dirp = u.u_arg[0];
-		trap1(callp->call);
+		trap1(callp->call);	/// Call the trap service routine
 		if(u.u_intflg)
 			u.u_error = EINTR;
 		if(u.u_error < 100) {
@@ -197,7 +197,8 @@ int (*f)();
 {
 
 	u.u_intflg = 1;
-	savu(u.u_qsav);
+	savu(u.u_qsav);	/// savu see m40.s:538. If the syscall is interrupted and then rescheduled, retu will will 
+					/// use u_qsav to restore here
 	(*f)();
 	u.u_intflg = 0;
 }

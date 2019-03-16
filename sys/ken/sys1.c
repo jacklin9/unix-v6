@@ -214,8 +214,8 @@ bad:
 rexit()
 {
 
-	u.u_arg[0] = u.u_ar0[R0] << 8;
-	exit();
+	u.u_arg[0] = u.u_ar0[R0] << 8;	/// Trap argument
+	exit();	/// exit see sys1.c:228
 }
 
 /*
@@ -236,28 +236,33 @@ exit()
 	for(q = &u.u_ofile[0]; q < &u.u_ofile[NOFILE]; q++)
 		if(a = *q) {
 			*q = NULL;
-			closef(a);
+			closef(a);	/// closef see fio.c:43
 		}
-	iput(u.u_cdir);
+	iput(u.u_cdir);	/// iput see iget.c:93
 	xfree();
 	a = malloc(swapmap, 1);
 	if(a == NULL)
 		panic("out of swap");
 	p = getblk(swapdev, a);
-	bcopy(&u, p->b_addr, 256);
+	bcopy(&u, p->b_addr, 256);	/// bcopy see subr.c:196
 	bwrite(p);
 	q = u.u_procp;
 	mfree(coremap, q->p_size, q->p_addr);
 	q->p_addr = a;
-	q->p_stat = SZOMB;
+	q->p_stat = SZOMB;	/// Change the status at last so that it doesn't need be scheduled again
+						/// What will happen if the proc is interrupted here???
+						/// NO problem. If a proc running in kernel is interrupted, the proc run
+						/// will resume after interrupt is handled because UNIX is not preemptive.
+						/// But NOTICE!!!! after this point, the proc cannot call any function that
+						/// may trigger proc reschedule
 
 loop:
 	for(p = &proc[0]; p < &proc[NPROC]; p++)
-	if(q->p_ppid == p->p_pid) {
+	if(q->p_ppid == p->p_pid) {	/// Find parent
 		wakeup(&proc[1]);
 		wakeup(p);
 		for(p = &proc[0]; p < &proc[NPROC]; p++)
-		if(q->p_pid == p->p_ppid) {
+		if(q->p_pid == p->p_ppid) {	/// Find child
 			p->p_ppid  = 1;
 			if (p->p_stat == SSTOP)
 				setrun(p);
@@ -285,13 +290,13 @@ wait()
 
 loop:
 	for(p = &proc[0]; p < &proc[NPROC]; p++)
-	if(p->p_ppid == u.u_procp->p_pid) {
+	if(p->p_ppid == u.u_procp->p_pid) {	/// Find a child p
 		f++;
-		if(p->p_stat == SZOMB) {
+		if(p->p_stat == SZOMB) {	/// Child has been dead
 			u.u_ar0[R0] = p->p_pid;
 			bp = bread(swapdev, f=p->p_addr);
-			mfree(swapmap, 1, f);
-			p->p_stat = NULL;
+			mfree(swapmap, 1, f);	/// Free up the space in swap that stores u struct
+			p->p_stat = NULL;	/// Free up proc slot
 			p->p_pid = 0;
 			p->p_ppid = 0;
 			p->p_sig = 0;
@@ -320,7 +325,7 @@ loop:
 		}
 	}
 	if(f) {
-		sleep(u.u_procp, PWAIT);
+		sleep(u.u_procp, PWAIT);	/// Sleep on itself to be waked up. See sys1.c:263
 		goto loop;
 	}
 	u.u_error = ECHILD;
@@ -354,7 +359,7 @@ found:
 	u.u_ar0[R0] = p2->p_pid;
 
 out:
-	u.u_ar0[R7] =+ 2;
+	u.u_ar0[R7] =+ 2;	/// Modify the interrupted addr to skip the syscall number
 }
 
 /*

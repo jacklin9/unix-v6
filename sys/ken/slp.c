@@ -295,7 +295,7 @@ loop:
 		rp++;
 		if(rp >= &proc[NPROC])
 			rp = &proc[0];
-		if(rp->p_stat==SRUN && (rp->p_flag&SLOAD)!=0) {
+		if(rp->p_stat==SRUN && (rp->p_flag&SLOAD)!=0) {	/// Swapped out proc will not be selected here!!!
 			if(rp->p_pri < n) {
 				p = rp;
 				n = rp->p_pri;
@@ -316,7 +316,7 @@ loop:
 	 * Switch to stack of the new process and set up
 	 * his segmentation registers.
 	 */
-	retu(rp->p_addr);
+	retu(rp->p_addr);	/// retu see m40.s:559
 	sureg();
 	/*
 	 * If the new process paused because it was
@@ -328,9 +328,12 @@ loop:
 	 *
 	 * You are not expected to understand this.
 	 */
-	if(rp->p_flag&SSWAP) {
+	if(rp->p_flag&SSWAP) {	/// The proc was swapped out before. Since it is now selected, it must be swapped in
+							/// before. But to make sure the new proc will return to where proc was at when it was
+							/// swapped out, the SSWAP was not cleared when it was just swapped in; the flag is
+							/// checked/cleared here to make sure to return to where proc was at when it was swapped out
 		rp->p_flag =& ~SSWAP;
-		aretu(u.u_ssav);
+		aretu(u.u_ssav);	/// aretu see m40.s:553
 	}
 	/*
 	 * The value returned here has many subtle implications.
@@ -386,7 +389,7 @@ retry:
 	 */
 
 	rip = u.u_procp;
-	up = rip;
+	up = rip;	/// rip, up are current proc pointers, rpp is new proc pointer
 	rpp->p_stat = SRUN;
 	rpp->p_flag = SLOAD;
 	rpp->p_uid = rip->p_uid;
@@ -406,8 +409,8 @@ retry:
 		if((rpp = *rip++) != NULL)
 			rpp->f_count++;
 	if((rpp=up->p_textp) != NULL) {
-		rpp->x_count++;
-		rpp->x_ccount++;
+		rpp->x_count++;	/// text ref count
+		rpp->x_ccount++;	/// in-mem ref count
 	}
 	u.u_cdir->i_count++;
 	/*
@@ -415,7 +418,8 @@ retry:
 	 * of the new process so that when it is actually
 	 * created (by copying) it will look right.
 	 */
-	savu(u.u_rsav);	/// savu see m40.s:538. Save sp and r5(bp) to u struct
+	savu(u.u_rsav);	/// savu see m40.s:544. Save sp and r5(bp) to u struct. Call savu here 
+					/// to make a in-core copy of the child kernel context for child retu (see copy u area below)
 	rpp = p;	/// rpp is new proc
 	u.u_procp = rpp;
 	rip = up;	/// rip is current proc
@@ -431,8 +435,11 @@ retry:
 	if(a2 == NULL) {
 		rip->p_stat = SIDL;	/// The proc is creating a proc
 		rpp->p_addr = a1;	/// Borrow core mem from parent
-		savu(u.u_ssav);
-		xswap(rpp, 0, 0);	/// xswap see text.c:23. Swap out the new proc
+		savu(u.u_ssav);		/// Save kernel stack info to u_ssav in u struct of current proc which is borrowed by new proc
+							/// This is why u struct needs separate fields to store kernel stack info.
+							/// Borrow parent's u struct and call savu here to make an in-core copy of the image to be 
+							/// swapped out soon
+		xswap(rpp, 0, 0);	/// xswap see text.c:23. Swap out the new proc so that it is not runable
 		rpp->p_flag =| SSWAP;
 		rip->p_stat = SRUN;
 	} else {

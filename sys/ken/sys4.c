@@ -22,7 +22,7 @@ getswit()
 gtime()
 {
 
-	u.u_ar0[R0] = time[0];
+	u.u_ar0[R0] = time[0];	/// time is initialized in alloc.c:40 in iinit and updated by time interrupt (see clock.c:102)
 	u.u_ar0[R1] = time[1];
 }
 

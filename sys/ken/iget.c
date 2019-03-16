@@ -101,7 +101,7 @@ struct inode *p;
 		if(rp->i_nlink <= 0) {
 			itrunc(rp);
 			rp->i_mode = 0;
-			ifree(rp->i_dev, rp->i_number);
+			ifree(rp->i_dev, rp->i_number);	/// ifree see alloc.c:224
 		}
 		iupdat(rp, time);
 		prele(rp);

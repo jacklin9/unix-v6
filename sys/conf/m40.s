@@ -27,10 +27,10 @@ trap:
 .globl	_runrun, _swtch
 call1:
 	tst	-(sp)
-	bic	$340,PS
+	bic	$340,PS	/// Set CPU priority to be 0
 	br	1f
 
-call:
+call:	/// This is for hardware interrupt to jump here
 	mov	PS,-(sp)
 1:
 	mov	r1,-(sp)
@@ -39,19 +39,25 @@ call:
 	bic	$!37,(sp)	/// Get the last 5 bits, that is the dev id in the PS
 	bit	$30000,PS	/// Previous mode: 00 kernel, 11 user
 	beq	1f			/// If kernel mode. Trap happens in kernel mode
+	/// The key difference between interrupt hapenning in kernel mode and user mode is that,
+	/// if an interrupt happens in user mode, after processing the int and before returnning to user,
+	/// reschedule is needed; if an interrupt happens in kernel mode, after processing the int
+	/// and before returning to the interrupted place, no reschedule is needed. That means:
+	/// UNIX v6 is not kernel preemptive, i.e. if a proc runs in kernel, it cannot be preempted unless
+	/// it gives up CPU proactively
 	jsr	pc,*(r0)+	/// Previous mode is user mode. Go to trap.c:42 or dev intr service routine.
 2:
 	bis	$340,PS
 	tstb	_runrun	/// Needs some kind of proc schedule
 	beq	2f
 	bic	$340,PS
-	jsr	pc,_swtch
+	jsr	pc,_swtch	/// _swtch see 
 	br	2b
 2:
 	tst	(sp)+
 	mtpi	sp
 	br	2f
-1:
+1:	/// If previous mode is kernel mode, no reschedule is needed
 	bis	$30000,PS	/// Set previous mode to be user mode
 	jsr	pc,*(r0)+
 	cmp	(sp)+,(sp)+
@@ -544,13 +550,15 @@ _savu:
 	bic	$340,PS
 	jmp	(r1)
 
-_aretu:
+_aretu:		/// aretu doesn't do u struct switch because aretu is generally called after retu which
+			/// already finished u struct switch
 	bis	$340,PS
 	mov	(sp)+,r1
 	mov	(sp),r0
 	br	1f
 
-_retu:
+_retu:		/// When the function that calls retu returns, the execution will return to 
+			/// the place where the function that calls savu is called
 	bis	$340,PS
 	mov	(sp)+,r1
 	mov	(sp),KISA6

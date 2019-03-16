@@ -49,11 +49,11 @@ int *fp;
 	if(rfp->f_flag&FPIPE) {
 		ip = rfp->f_inode;
 		ip->i_mode =& ~(IREAD|IWRITE);
-		wakeup(ip+1);
+		wakeup(ip+1);	/// wakeup see slp.c:71
 		wakeup(ip+2);
 	}
 	if(rfp->f_count <= 1)
-		closei(rfp->f_inode, rfp->f_flag&FWRITE);
+		closei(rfp->f_inode, rfp->f_flag&FWRITE);	/// closei see fio.c:71
 	rfp->f_count--;
 }
 
@@ -78,7 +78,7 @@ int *ip;
 	dev = rip->i_addr[0];
 	maj = rip->i_addr[0].d_major;
 	if(rip->i_count <= 1)
-	switch(rip->i_mode&IFMT) {
+	switch(rip->i_mode&IFMT) {	/// If the inode represents a device
 
 	case IFCHR:
 		(*cdevsw[maj].d_close)(dev, rw);
@@ -87,7 +87,7 @@ int *ip;
 	case IFBLK:
 		(*bdevsw[maj].d_close)(dev, rw);
 	}
-	iput(rip);
+	iput(rip);	/// iput see iget.c:93
 }
 
 /*

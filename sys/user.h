@@ -42,7 +42,7 @@ struct user
 	int	u_dsize;		/* data size (*64) */
 	int	u_ssize;		/* stack size (*64) */
 	int	u_sep;			/* flag for I and D separation */
-	int	u_qsav[2];		/* label variable for quits and interrupts */
+	int	u_qsav[2];		/* label variable for quits and interrupts */	/// Used for returning to the context when proc is interrupted during sys call
 	int	u_ssav[2];		/* label variable for swapping */
 	int	u_signal[NSIG];		/* disposition of signals */
 	int	u_utime;		/* this process user time */
