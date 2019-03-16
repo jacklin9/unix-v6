@@ -173,6 +173,7 @@ loop:
 		goto loop;
 	}
 
+	/// Find one proc that need be swapped in
 	/*
 	 * see if there is core for that process
 	 */
@@ -225,7 +226,7 @@ loop:
 found1:
 	spl0();
 	rp->p_flag =& ~SLOAD;
-	xswap(rp, 1, 0);
+	xswap(rp, 1, 0);	/// xswap see text.c:23
 	goto loop;
 
 	/*
@@ -243,7 +244,7 @@ found2:
 		rp->x_ccount++;
 	}
 	rp = p1;
-	if(swap(rp->p_addr, a, rp->p_size, B_READ))
+	if(swap(rp->p_addr, a, rp->p_size, B_READ))	/// swap see bio.c:491
 		goto swaper;
 	mfree(swapmap, (rp->p_size+7)/8, rp->p_addr);
 	rp->p_addr = a;

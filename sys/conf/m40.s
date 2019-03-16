@@ -552,6 +552,7 @@ _savu:
 
 _aretu:		/// aretu doesn't do u struct switch because aretu is generally called after retu which
 			/// already finished u struct switch
+			/// savu(u_ssav) is generally called when a proc swap out itself
 	bis	$340,PS
 	mov	(sp)+,r1
 	mov	(sp),r0
