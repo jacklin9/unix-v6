@@ -199,7 +199,7 @@ smdate()
 }
 */
 
-ssig()
+ssig()	/// Set signal handle function
 {
 	register a;
 
@@ -210,7 +210,7 @@ ssig()
 	}
 	u.u_ar0[R0] = u.u_signal[a];
 	u.u_signal[a] = u.u_arg[1];
-	if(u.u_procp->p_sig == a)
+	if(u.u_procp->p_sig == a)	/// Why clear the signal???
 		u.u_procp->p_sig = 0;
 }
 

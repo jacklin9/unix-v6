@@ -4,6 +4,116 @@
 #define EVEN	010
 #define KL	020
 #define ROOT	040
+
+/// Generate 2 files: l.s and c.c
+///
+/// l.s is an assembly file that contains code of low level initialization and trap/interrupt entries
+/// A sample is as follows.
+/*
+/ low core
+
+br4 = 200
+br5 = 240
+br6 = 300
+br7 = 340
+
+. = 0^.
+	br	1f
+	4
+
+/ trap vectors
+	trap; br7+0.		/ bus error
+	trap; br7+1.		/ illegal instruction
+	trap; br7+2.		/ bpt-trace trap
+	trap; br7+3.		/ iot trap
+	trap; br7+4.		/ power fail
+	trap; br7+5.		/ emulator trap
+	trap; br7+6.		/ system entry
+
+. = 40^.
+.globl	start, dump
+1:	jmp	start
+	jmp	dump
+
+
+. = 60^.
+	klin; br4
+	klou; br4
+
+. = 100^.
+	kwlp; br6
+	kwlp; br6
+
+. = 114^.
+	trap; br7+7.		/ 11/70 parity
+
+. = 220^.
+	rkio; br5
+
+. = 240^.
+	trap; br7+7.		/ programmed interrupt
+	trap; br7+8.		/ floating point
+	trap; br7+9.		/ segmentation violation
+
+//////////////////////////////////////////////////////
+/		interface code to C
+//////////////////////////////////////////////////////
+
+.globl	call, trap
+
+.globl	_klrint
+klin:	jsr	r0,call; _klrint
+.globl	_klxint
+klou:	jsr	r0,call; _klxint
+
+.globl	_clock
+kwlp:	jsr	r0,call; _clock
+
+
+.globl	_rkintr
+rkio:	jsr	r0,call; _rkintr
+*/
+/// c.c is a device driver interface file. A sample is as follows.
+/*
+int	(*bdevsw[])()
+{
+	&nulldev,	&nulldev,	&rkstrategy, 	&rktab,	/ rk 	0 /
+	&nodev,		&nodev,		&nodev,		0,	/ tm 	1 /
+	0
+};
+
+int	(*cdevsw[])()
+{
+	&klopen,   &klclose,  &klread,   &klwrite,  &klsgtty,	/ console 	0 /
+	&nodev,    &nodev,    &nodev,    &nodev,    &nodev,	/ pc 	1 /
+	&lpopen,   &lpclose,  &nodev,    &lpwrite,  &lpsgtty,	/ lp 	2 /
+	&nodev,    &nodev,    &nodev,    &nodev,    &nodev,	/ lv 	3 /
+	&nulldev,  &nulldev,  &mmread,   &mmwrite,  &nodev,	/ mem 	4 /
+	&nodev,    &nodev,    &nodev,    &nodev,    &nodev,	/ gld 	5 /
+	&nodev,    &nodev,    &nodev,    &nodev,    &nodev,	/ tm 	6 /
+	&djopen,   &djclose,  &djread,   &djwrite,  &djsgtty,	/ dj 	7 /
+	&nodev,    &nodev,    &nodev,    &nodev,    &nodev,	/ crd 	8 /
+	&nodev,    &nodev,    &nodev,    &nodev,    &nodev,	/ vp 	9 /
+	&nulldev,  &nulldev,  &rkread,   &rkwrite,  &nodev,	/ rk 	10 /
+	&nodev,    &nodev,    &nodev,    &nodev,    &nodev,	/ ta 	11 /
+	&nodev,    &nodev,    &nodev,    &nodev,    &nodev,	/ dr 	12 /
+	&yjopen,   &yjclose,  &yjread,   &nodev,    &nodev,	/ cybjd 	13 /
+	&yjopen,   &yjclose,  &nodev,    &yjwrite,  &nodev,	/ cybju 	14 /
+	&ycopen,   &ycclose,  &ycread,   &nodev,    &nodev,	/ cybcd 	15 /
+	&ycopen,   &ycclose,  &nodev,    &ycwrite,  &nodev,	/ cybcu 	16 /
+	&nodev,    &nodev,    &nodev,    &nodev,    &nodev,	/ crdb 	17 /
+	&craopen,  &crclose,  &crread,   &nodev,    &crsgtty,	/ cr 	18 /
+	&crbopen,  &crclose,  &crread,   &nodev,    &crsgtty,	/ crb 	19 /
+	&syopen,   &nulldev,  &syread,   &sywrite,  &sysgtty,	/ tty 	20 /
+	0
+};
+
+int	rootdev	{(0<<8)|8};
+int	swapdev	{(0<<8)|0};
+int	swplo	1452;	/ cannot be zero /
+int	nswap	984;
+*/
+
 char	*btab[]
 {
 	"rk",
@@ -39,9 +149,12 @@ char	*ctab[]
 struct tab
 {
 	char	*name;
-	int	count;
+	int	count;		/// Configured device count. If count != 0, the device exist and code for it needs be generated.
+					/// If count = 0, the device does not exist. Count can generally be changed by input().
+					/// The difference between count < 0 and count > 0 is count < 0 cannot be changed by input() and 
+					/// the opposite number is the real count while count > 0 can be changed
 	int	address;	/// Trap vector addr
-	int	key;	/// Device type, whether it needs interrupt
+	int	key;	/// Device type(char or block), whether it needs interrupt
 	char	*codea;	/// Trap vector content
 	char	*codeb;	/// Implementation of function called in trap vector
 	char	*codec;
@@ -59,11 +172,11 @@ struct tab
 
 	"mem",
 	-1,	300,	CHAR,
-	"",
-	"",
-	"",
-	"",
-	"\t&nulldev,  &nulldev,  &mmread,   &mmwrite,  &nodev,",
+	"",	/// Codea
+	"",	/// Codeb
+	"",	/// Codec
+	"",	/// Coded
+	"\t&nulldev,  &nulldev,  &mmread,   &mmwrite,  &nodev,",	/// Codee
 
 	"pc",
 	0,	70,	CHAR+INTR,
@@ -383,7 +496,7 @@ main()
 	int i, n, ev, nkl;
 	int flagf, flagb;
 
-	while(input());
+	while(input());	/// Set device count according to input
 
 /*
  * pass1 -- create interrupt vectors
@@ -391,15 +504,15 @@ main()
 	nkl = 0;
 	flagf = flagb = 1;
 	fout = creat("l.s", 0666);
-	puke(stra);	/// Print according to string list
+	puke(stra);	/// Print exception trap handler
 	for(p=table; p->name; p++)
-	if(p->count != 0 && p->key & INTR) {
-		if(p->address>240 && flagb) {
+	if(p->count != 0 && p->key & INTR) {	/// If device needs be configured and supports interrupt
+		if(p->address>240 && flagb) {	/// When addr > 240, dump strb once
 			flagb = 0;
 			puke(strb);
 		}
 		if(p->address >= 300) {
-			if(flagf) {
+			if(flagf) {	/// When addr >= 300, dump strc once
 				ev = 0;
 				flagf = 0;
 				puke(strc);
@@ -435,7 +548,7 @@ main()
  */
 
 	fout = creat("c.c", 0666);
-	puke(stre);
+	puke(stre);	/// Start of block dev conf
 	for(i=0; q=btab[i]; i++) {
 		for(p=table; p->name; p++)
 		if(equal(q, p->name) &&
@@ -448,7 +561,7 @@ main()
 		printf("\t&nodev,\t\t&nodev,\t\t&nodev,\t\t0,\t/* %s */\n", q);
 	newb:;
 	}
-	puke(strf);
+	puke(strf);	/// Start of char dev conf
 	for(i=0; q=ctab[i]; i++) {
 		for(p=table; p->name; p++)
 		if(equal(q, p->name) &&
@@ -485,7 +598,7 @@ input()
 	register n;
 
 	p = line;
-	while((n=getchar()) != '\n') {
+	while((n=getchar()) != '\n') {	/// Read one line
 		if(n == 0)
 			return(0);
 		if(n == ' ' || n == '\t')
@@ -494,6 +607,7 @@ input()
 	}
 	*p++ = 0;
 	n = 0;
+	/// line should be of format [n] devname
 	p = line;
 	while(*p>='0' && *p<='9') {
 		n =* 10;
@@ -503,18 +617,18 @@ input()
 		n = 1;
 	if(*p == 0)
 		return(1);
-	for(q=table; q->name; q++)
+	for(q=table; q->name; q++)	/// Find the device
 	if(equal(q->name, p)) {
 		if(root < 0 && (q->key&BLOCK)) {
 			root = 0;	/// Root is set
 			q->key =| ROOT;
 		}
-		if(q->count < 0) {
+		if(q->count < 0) {	/// This device doesn't need config. It is fixed
 			printf("%s: no more, no less\n", p);
 			return(1);
 		}
 		q->count =+ n;
-		if(q->address < 300 && q->count > 1) {
+		if(q->address < 300 && q->count > 1) {	/// Devices whose trap no is less than 300 has at most 1
 			q->count = 1;
 			printf("%s: only one\n", p);
 		}

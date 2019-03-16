@@ -230,7 +230,7 @@ exit()
 	register int *q, a;
 	register struct proc *p;
 
-	u.u_procp->p_flag =& ~STRC;
+	u.u_procp->p_flag =& ~STRC;	/// Clear trace flag
 	for(q = &u.u_signal[0]; q < &u.u_signal[NSIG];)
 		*q++ = 1;
 	for(q = &u.u_ofile[0]; q < &u.u_ofile[NOFILE]; q++)
