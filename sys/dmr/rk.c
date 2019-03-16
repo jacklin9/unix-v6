@@ -45,13 +45,13 @@ struct buf *abp;
 
 	bp = abp;
 	if(bp->b_flags&B_PHYS)
-		mapalloc(bp);
+		mapalloc(bp);	/// mapalloc see bio.c:455
 	d = bp->b_dev.d_minor-7;
 	if(d <= 0)
 		d = 1;
 	if (bp->b_blkno >= NRKBLK*d) {
 		bp->b_flags =| B_ERROR;
-		iodone(bp);
+		iodone(bp);	/// iodone see bio.c:317
 		return;
 	}
 	bp->av_forw = 0;
@@ -122,7 +122,7 @@ rkintr()
 rkread(dev)
 {
 
-	physio(rkstrategy, &rrkbuf, dev, B_READ);
+	physio(rkstrategy, &rrkbuf, dev, B_READ);	/// physio see bio.c:553
 }
 
 rkwrite(dev)

@@ -18,7 +18,7 @@
  * I/O to be done-- e.g. swbuf, just below, for
  * swapping.
  */
-char	buffers[NBUF][514];
+char	buffers[NBUF][514];	/// Buffer mem used for block cache
 struct	buf	swbuf;
 
 /*
@@ -52,6 +52,7 @@ int	httab;
 /*
  * Read in (if necessary) the block and return a buffer pointer.
  */
+/// getblk is a lower level function compared with bread
 bread(dev, blkno)
 {
 	register struct buf *rbp;
@@ -61,7 +62,7 @@ bread(dev, blkno)
 		return(rbp);
 	rbp->b_flags =| B_READ;
 	rbp->b_wcount = -256;
-	(*bdevsw[dev.d_major].d_strategy)(rbp);	/// Trigger the block read
+	(*bdevsw[dev.d_major].d_strategy)(rbp);	/// Trigger the block read. See mkconf.c:261
 	iowait(rbp);
 	return(rbp);
 }
@@ -172,7 +173,7 @@ struct buf *bp;
 	rbp = bp;
 	if (rbp->b_flags&B_WANTED)	/// Some process is waiting for the block cache. Add this flag to avoid unnecessary wakeup
 		wakeup(rbp);	/// wakeup see slp.c:71
-	if (bfreelist.b_flags&B_WANTED) {
+	if (bfreelist.b_flags&B_WANTED) {	/// If some proc is waiting for available bcache
 		bfreelist.b_flags =& ~B_WANTED;
 		wakeup(&bfreelist);
 	}
@@ -226,7 +227,7 @@ getblk(dev, blkno)
 
     loop:
 	if (dev < 0)
-		dp = &bfreelist;
+		dp = &bfreelist;	/// bfreelist is initialized by binit
 	else {
 		dp = bdevsw[dev.d_major].d_tab;	/// If there is no corresponding dev interface in block dev tab...
 		if(dp == NULL)
@@ -235,7 +236,7 @@ getblk(dev, blkno)
 			if (bp->b_blkno!=blkno || bp->b_dev!=dev)
 				continue;
 			spl6();
-			if (bp->b_flags&B_BUSY) {
+			if (bp->b_flags&B_BUSY) {	/// The cache is being used by a proc
 				bp->b_flags =| B_WANTED;
 				sleep(bp, PRIBIO);	/// sleep see slp.c:25
 				spl0();
@@ -261,6 +262,7 @@ getblk(dev, blkno)
 		goto loop;
 	}
 	bp->b_flags = B_BUSY | B_RELOC;
+	/// Move the bcache from the previously associated dev to the new one
 	bp->b_back->b_forw = bp->b_forw;
 	bp->b_forw->b_back = bp->b_back;
 	bp->b_forw = dp->b_forw;

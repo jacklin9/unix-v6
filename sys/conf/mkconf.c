@@ -258,7 +258,7 @@ struct tab
 										/// r0 will also be pushed to stack. Then r0 is loaded with addr of 
 										/// next instruction (which stores addr of _rkintr), and jump to call
 										/// call see m40.s:33. _rkintr see rk.c:98
-	"\t&nulldev,\t&nulldev,\t&rkstrategy, \t&rktab,",
+	"\t&nulldev,\t&nulldev,\t&rkstrategy, \t&rktab,",	/// rkstrategy see rk.c:39
 	"\t&nulldev,  &nulldev,  &rkread,   &rkwrite,  &nodev,",
 
 	"tm",		/// This is the 2nd dev: tape

@@ -59,7 +59,12 @@ struct devtab
  * This is the head of the queue of available
  * buffers-- all unused except for the 2 list heads.
  */
-struct	buf bfreelist;
+struct	buf bfreelist;	/// 2 kinds of list are contained here. The 1st is linked together with 
+						/// b_forw and b_back. This kind of list is headed by bfreelist which is
+						/// a list of block caches that are not associated with any dev (a special dev NODEV), 
+						/// or headed by devtab which is a list of block caches that are associated 
+						/// with the dev. The 2nd kind of list is haeded by bfreelist and linked with 
+						/// av_forw and av_back and is a list of freed block caches that are sorted by LRU
 
 /*
  * These flags are kept in b_flags.
