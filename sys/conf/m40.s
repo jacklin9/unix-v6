@@ -467,7 +467,7 @@ gword:
 	br	1f
 
 _suiword:
-_suword:
+_suword:	/// Write a word to specified user space address: suword(addr, word)
 	mov	2(sp),r1
 	mov	4(sp),r0
 suword:

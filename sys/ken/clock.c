@@ -93,7 +93,7 @@ out:
 	} else
 		u.u_stime++;	/// Inc kernel/sys level time
 	pp = u.u_procp;
-	if(++pp->p_cpu == 0)
+	if(++pp->p_cpu == 0)	/// p_cpu is the time consumed by the current proc. If it overflows, make it biggest
 		pp->p_cpu--;
 	if(++lbolt >= HZ) {		/// tick number (between 0 and HZ)
 		if((ps&0340) != 0)
@@ -108,15 +108,17 @@ out:
 			runrun++;
 			wakeup(&lbolt);
 		}
-		for(pp = &proc[0]; pp < &proc[NPROC]; pp++)
+		for(pp = &proc[0]; pp < &proc[NPROC]; pp++)	/// Recalculate p_time and p_cpu every 60 ticks
 		if (pp->p_stat) {
-			if(pp->p_time != 127)
+			if(pp->p_time != 127)	/// How long it has been since it is in core or swapped out. This is reset when it is created, swapped in, or swapped out
 				pp->p_time++;
-			if((pp->p_cpu & 0377) > SCHMAG)
-				pp->p_cpu =- SCHMAG; else
+			if((pp->p_cpu & 0377) > SCHMAG)	/// Decrease all proc's CPU time so that if a proc is not running,
+											/// the cpu time of this proc will decrease, making its priority high
+				pp->p_cpu =- SCHMAG; 
+			else
 				pp->p_cpu = 0;
-			if(pp->p_pri > PUSER)
-				setpri(pp);
+			if(pp->p_pri > PUSER)	/// If it is a normal user proc
+				setpri(pp);	/// setpri see slp.c:112
 		}
 		if(runin!=0) {
 			runin = 0;

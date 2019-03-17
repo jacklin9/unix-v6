@@ -26,7 +26,7 @@ iinit()
 
 	(*bdevsw[rootdev.d_major].d_open)(rootdev, 1);
 	bp = bread(rootdev, 1);	/// bread see bio.c:55
-	cp = getblk(NODEV);
+	cp = getblk(NODEV);	/// Why use getblk instead of free mem
 	if(u.u_error)
 		panic("iinit");
 	bcopy(bp->b_addr, cp->b_addr, 256);
@@ -52,12 +52,12 @@ iinit()
  * no space on dev x/y -- when
  * the free list is exhausted.
  */
-alloc(dev)
+alloc(dev)	/// Allocate one disk block
 {
 	int bno;
 	register *bp, *ip, *fp;
 
-	fp = getfs(dev);
+	fp = getfs(dev);	/// fp is a super block. See filsys.h:12
 	while(fp->s_flock)
 		sleep(&fp->s_flock, PINOD);
 	do {
@@ -67,7 +67,8 @@ alloc(dev)
 		if(bno == 0)
 			goto nospace;
 	} while (badblock(fp, bno, dev));
-	if(fp->s_nfree <= 0) {
+	if(fp->s_nfree <= 0) {	/// If free blocks in core are used up. Then the last free block contains the list
+							/// of free blocks on disk, so read it into core
 		fp->s_flock++;
 		bp = bread(dev, bno);
 		ip = bp->b_addr;
@@ -168,7 +169,7 @@ ialloc(dev)
 loop:
 	if(fp->s_ninode > 0) {
 		ino = fp->s_inode[--fp->s_ninode];
-		ip = iget(dev, ino);
+		ip = iget(dev, ino);	/// iget see iget.c:27
 		if (ip==NULL)
 			return(NULL);
 		if(ip->i_mode == 0) {
@@ -184,9 +185,9 @@ loop:
 		iput(ip);
 		goto loop;
 	}
-	fp->s_ilock++;
+	fp->s_ilock++;	/// No in-core free inode
 	ino = 0;
-	for(i=0; i<fp->s_isize; i++) {
+	for(i=0; i<fp->s_isize; i++) {	/// Scan inode blocks
 		bp = bread(dev, i+2);
 		ip = bp->b_addr;
 		for(j=0; j<256; j=+16) {

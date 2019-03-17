@@ -75,7 +75,7 @@ klclose(dev)
 
 klread(dev)
 {
-	ttread(&kl11[dev.d_minor]);
+	ttread(&kl11[dev.d_minor]);	/// ttread see tty.c:473
 }
 
 klwrite(dev)
@@ -100,11 +100,11 @@ klrint(dev)
 
 	tp = &kl11[dev.d_minor];
 	addr = tp->t_addr;
-	c = addr->klrbuf;
+	c = addr->klrbuf;	/// klrbuf see kl.c:27
 	addr->klrcsr =| RDRENB;
 	if ((c&0177)==0)
 		addr->kltbuf = c;	/* hardware botch */
-	ttyinput(c, tp);
+	ttyinput(c, tp);	/// Get char c, process it
 }
 
 klsgtty(dev, v)
@@ -113,5 +113,5 @@ int *v;
 	register struct tty *tp;
 
 	tp = &kl11[dev.d_minor];
-	ttystty(tp, v);
+	ttystty(tp, v);	/// ttystty see tty.c:517
 }

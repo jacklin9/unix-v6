@@ -36,10 +36,10 @@ struct	mount
 {
 	int	m_dev;		/* device mounted */
 	int	*m_bufp;	/* pointer to superblock */
-	int	*m_inodp;	/* pointer to mounted on inode */
+	int	*m_inodp;	/* pointer to mounted-on inode */
 } mount[NMOUNT];
 int	mpid;			/* generic for unique process id's */
-char	runin;			/* scheduling flag */	/// Wait to check if there is swapped out proc deserve swapping out a proc to free up core
+char	runin;			/* scheduling flag */	/// Wait to check if there is swapped out proc deserve swapping out an in-core proc to free up core
 char	runout;			/* scheduling flag */	/// Wait there is swapped out proc to be swapped in
 char	runrun;			/* scheduling flag */	/// Wait for proc reschedule
 char	curpri;			/* more scheduling */

@@ -74,7 +74,7 @@ struct {
  */
 gtty()
 {
-	int v[3];
+	int v[3];	/// v[0] is spead, v[1].low is erase char, v[1].high is kill char, v2] is tty mode
 	register *up, *vp;
 
 	vp = v;
@@ -82,7 +82,8 @@ gtty()
 	if (u.u_error)
 		return;
 	up = u.u_arg[0];
-	suword(up, *vp++);
+	/// Write to user space
+	suword(up, *vp++);	/// suword see m40.s:470
 	suword(++up, *vp++);
 	suword(++up, *vp++);
 }
@@ -95,11 +96,11 @@ stty()
 {
 	register int *up;
 
-	up = u.u_arg[0];
-	u.u_arg[0] = fuword(up);
+	up = u.u_arg[0];	/// Get argument from user space
+	u.u_arg[0] = fuword(up);	/// fuword see m40.s:454
 	u.u_arg[1] = fuword(++up);
 	u.u_arg[2] = fuword(++up);
-	sgtty(0);
+	sgtty(0);	/// If argument is 0, it is set; if argument is non-0, it is get and result is stored in the arg
 }
 
 /*
@@ -116,14 +117,14 @@ int *v;
 	register struct file *fp;
 	register struct inode *ip;
 
-	if ((fp = getf(u.u_ar0[R0])) == NULL)
+	if ((fp = getf(u.u_ar0[R0])) == NULL)	/// Get file descriptor of the char dev. getf see fio.c:20
 		return;
 	ip = fp->f_inode;
 	if ((ip->i_mode&IFMT) != IFCHR) {
 		u.u_error = ENOTTY;
 		return;
 	}
-	(*cdevsw[ip->i_addr[0].d_major].d_sgtty)(ip->i_addr[0], v);
+	(*cdevsw[ip->i_addr[0].d_major].d_sgtty)(ip->i_addr[0], v);	/// See klsgtty at kl.c:110 for example
 }
 
 /*
@@ -136,7 +137,7 @@ struct tty *atp;
 
 	tp = atp;
 	spl5();
-	while (tp->t_outq.c_cc) {
+	while (tp->t_outq.c_cc) {	/// If output queue is not empty, wait for it to finish output
 		tp->t_state =| ASLEEP;
 		sleep(&tp->t_outq, TTOPRI);
 	}
@@ -148,19 +149,19 @@ struct tty *atp;
  * Initialize clist by freeing all character blocks, then count
  * number of character devices. (Once-only routine)
  */
-cinit()
+cinit()	/// cinit is called once in main.c:main
 {
 	register int ccp;
 	register struct cblock *cp;
 	register struct cdevsw *cdp;
 
 	ccp = cfree;
-	for (cp=(ccp+07)&~07; cp <= &cfree[NCLIST-1]; cp++) {	/// Initialize cfreelist
+	for (cp=(ccp+07)&~07; cp <= &cfree[NCLIST-1]; cp++) {	/// Initialize cfreelist. Round address up by 8
 		cp->c_next = cfreelist;
 		cfreelist = cp;
 	}
 	ccp = 0;
-	for(cdp = cdevsw; cdp->d_open; cdp++)
+	for(cdp = cdevsw; cdp->d_open; cdp++)	/// Count char dev number
 		ccp++;
 	nchrdev = ccp;
 }
@@ -175,13 +176,13 @@ struct tty *atp;
 	register int sps;
 
 	tp = atp;
-	while (getc(&tp->t_canq) >= 0);
-	while (getc(&tp->t_outq) >= 0);
+	while (getc(&tp->t_canq) >= 0);	/// getc see m40.s:109. Read up all chars in cannon queue
+	while (getc(&tp->t_outq) >= 0);	/// Read up all chars in out queue
 	wakeup(&tp->t_rawq);
 	wakeup(&tp->t_outq);
 	sps = PS->integ;
 	spl5();
-	while (getc(&tp->t_rawq) >= 0);
+	while (getc(&tp->t_rawq) >= 0);	/// Read up all chars in raw queue
 	tp->t_delct = 0;
 	PS->integ = sps;
 }
@@ -192,7 +193,7 @@ struct tty *atp;
  * It waits until a full line has been typed in cooked mode,
  * or until any character has been typed in raw mode.
  */
-canon(atp)
+canon(atp)	/// Called by ttread
 struct tty *atp;
 {
 	register char *bp;
@@ -252,7 +253,7 @@ loop:
  * The arguments are the character and the appropriate
  * tty structure.
  */
-ttyinput(ac, atp)
+ttyinput(ac, atp)	/// Called by tty interrupt. See klrint at kl.c:96 for example
 struct tty *atp;
 {
 	register int t_flags, c;
@@ -274,7 +275,7 @@ struct tty *atp;
 	}
 	if (t_flags&LCASE && c>='A' && c<='Z')
 		c =+ 'a'-'A';
-	putc(c, &tp->t_rawq);
+	putc(c, &tp->t_rawq);	/// putc see m40.s:146
 	if (t_flags&RAW || c=='\n' || c==004) {
 		wakeup(&tp->t_rawq);
 		if (putc(0377, &tp->t_rawq)==0)
@@ -293,7 +294,7 @@ struct tty *atp;
  * interrupt level for echoing.
  * The arguments are the character and the tty structure.
  */
-ttyoutput(ac, tp)
+ttyoutput(ac, tp)	/// Called by ttwrite which is called by device write
 struct tty *tp;
 {
 	register int c;
@@ -469,7 +470,7 @@ struct tty *atp;
  * The pc is backed up for the duration of this call.
  * In case of a caught interrupt, an RTI will re-execute.
  */
-ttread(atp)
+ttread(atp)		/// Called by device read function. See klread at kl.c:76 for example
 struct tty *atp;
 {
 	register struct tty *tp;
@@ -477,15 +478,15 @@ struct tty *atp;
 	tp = atp;
 	if ((tp->t_state&CARR_ON)==0)
 		return;
-	if (tp->t_canq.c_cc || canon(tp))
-		while (tp->t_canq.c_cc && passc(getc(&tp->t_canq))>=0);
+	if (tp->t_canq.c_cc || canon(tp))	/// Make sure there is char in cannon queue
+		while (tp->t_canq.c_cc && passc(getc(&tp->t_canq))>=0);	/// passc see subr.c:132
 }
 
 /*
  * Called from the device's write routine after it has
  * calculated the tty-structure given as argument.
  */
-ttwrite(atp)
+ttwrite(atp)	/// Called by dervice write function. See klwrite at kl.c:81 for example
 struct tty *atp;
 {
 	register struct tty *tp;
@@ -520,13 +521,14 @@ int *atp, *av;
 	register  *tp, *v;
 
 	tp = atp;
-	if(v = av) {
+	if(v = av) {	/// If av is non-zero, it is gtty
 		*v++ = tp->t_speeds;
 		v->lobyte = tp->t_erase;
 		v->hibyte = tp->t_kill;
 		v[1] = tp->t_flags;
 		return(1);
 	}
+	/// If av is zero, it is stty. Arguments are passed in the user arguments
 	wflushtty(tp);
 	v = u.u_arg;
 	tp->t_speeds = *v++;
